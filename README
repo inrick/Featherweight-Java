@@ -1,0 +1,10 @@
+An attempt to implement the typing rules of Featherweight Java as specified in
+
+[1] Igarashi, Pierce, Wadler. Featherweight Java: A Minimal Core Calculus for Java and GJ. ACM Transactions on Programming Languages and Systems 2001.
+    http://www.cis.upenn.edu/~bcpierce/papers/fj-toplas.pdf
+
+Usage (requires GHC): runhaskell Main.hs <Featherweight Java file>
+
+Known problems:
+- m(e*) is seen as a valid expression.
+- Circular class declarations will result in an infinite loop instead of an error.
