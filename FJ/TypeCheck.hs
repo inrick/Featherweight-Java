@@ -31,7 +31,7 @@ tcheckClassTable1 ct
         classesAreUnique = nub classNames == classNames
 
         -- Check that all the classes in the class table are OK.
-        classTableOK     = all ((==) True) $ map (tcheckClass ct) ct
+        classTableOK     = all ((==) True) . map (tcheckClass ct) $ ct
 
         -- Would also like to check that there are no circular class
         -- dependencies here.
@@ -55,7 +55,7 @@ tcheckClassHead ct c =
     -- itself) in the given class table. That the classes in the class table
     -- are unique was already checked in tcheckClassTable1 which is why we can
     -- allow ourselves to have "x /= c" below.
-        else not $ null [x | x <- ct, x /= c, cname x == csuperClass c]
+        else not . null . filter ((==) (csuperClass c) . cname) . filter ((/=) c) $ ct
 
 -- Check that the fields are given a unique name and that their type exists.
 tcheckFields :: ClassTable -> Class -> Bool
@@ -63,14 +63,14 @@ tcheckFields ct c = fieldsAreUnique && fieldsOK
     where
         -- Check that all the types of the fields exist in the class table.
         fieldsOK =
-            if all ((==) True) $ map (classExists ct . ftype) (cfields c)
+            if all ((==) True) . map (classExists ct . ftype) $ cfields c
                 then True
                 else error $ "Some field in class " ++ (cname c) ++
                              " is of a type which does not exist. T-Class failed."
         
         -- Check that all the fields have unique names all through the superclasses.
         fieldsAreUnique =
-            if nubBy (\x -> \y -> fname x == fname y) (fields ct c) == fields ct c
+            if nubBy (\x y -> fname x == fname y) (fields ct c) == fields ct c
                 then True
                 else error $ "The class " ++ (cname c) ++ " contains fields with duplicate names \
                              \(possibly a duplicate of a field in a superclass). T-Class failed."
@@ -119,8 +119,8 @@ tcheckMethods ct c = methodsAreUnique && argsOK && mtypeOK && mexprsOK
         methods = cmethods c
 
         -- Run the method head and expression checkers on all methods in the class.
-        mtypeOK = all ((==) True) $ map mheadOK methods
-        mexprsOK = all ((==) True) $ map expressionOK methods
+        mtypeOK = all ((==) True) . map mheadOK $ methods
+        mexprsOK = all ((==) True) . map expressionOK $ methods
 
         -- Check that the methods have unique names.
         methodsAreUnique = if nub methodNames == methodNames
@@ -173,7 +173,7 @@ exprType :: ClassTable -> Method -> Expr -> Type
 -- (T-Var)
 exprType ct m (ExprVar var) =
     if foundVar /= Nothing
-        then ftype $ fromJust foundVar
+        then ftype . fromJust $ foundVar
         else error $ "Variable " ++ var ++ " does not exist in the environment of method "
                      ++ (mname m) ++ ". T-Var failed."
     where
@@ -182,10 +182,10 @@ exprType ct m (ExprVar var) =
 -- (T-Field)
 exprType ct m (ExprField e0expr e0name) =
     if foundField /= Nothing
-        then ftype $ fromJust foundField
+        then ftype . fromJust $ foundField
         else error $ "Type error in method " ++ (mname m) ++ ". T-Field failed."
     where
-        foundField = find (\x -> fname x == e0name) $ fields ct (getClass ct (exprType ct m e0expr))
+        foundField = find ((==) e0name . fname) . fields ct $ getClass ct (exprType ct m e0expr)
 -- (T-Invk)
 exprType ct m (ExprMethod e0expr e0name e0exprs) =
     if subTypesOK
