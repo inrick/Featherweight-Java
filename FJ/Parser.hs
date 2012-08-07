@@ -124,8 +124,8 @@ assignmentParser =
 -- Method:
 -- C m(C* x*) { return e; }
 methodParser =
-    do { methodType <- typeParser;
-       ; methodName <- identifier;
+    do { methodType <- typeParser
+       ; methodName <- identifier
        ; methodArgs <- parens argumentParser
        ; expression <- braces (do { reserved "return"
                                   ; expr <- exprParser
