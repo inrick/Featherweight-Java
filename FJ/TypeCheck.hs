@@ -31,7 +31,7 @@ tcheckClassTable1 ct
         classesAreUnique = nub classNames == classNames
 
         -- Check that all the classes in the class table are OK.
-        classTableOK     = all ((==) True) . map (tcheckClass ct) $ ct
+        classTableOK     = and . map (tcheckClass ct) $ ct
 
         -- Would also like to check that there are no circular class
         -- dependencies here.
@@ -63,7 +63,7 @@ tcheckFields ct c = fieldsAreUnique && fieldsOK
     where
         -- Check that all the types of the fields exist in the class table.
         fieldsOK =
-            if all ((==) True) . map (classExists ct . ftype) $ cfields c
+            if and . map (classExists ct . ftype) $ cfields c
                 then True
                 else error $ "Some field in class " ++ (cname c) ++
                              " is of a type which does not exist. T-Class failed."
@@ -90,7 +90,7 @@ tcheckConstructor ct c = argumentsOK && assignmentsOK && superParametersOK
         -- in the class.
         assignmentsOK =
             if map fname classFields == map fst (kassignments cons) &&
-                all ((==) True) (map (\(x,y) -> x == y) (kassignments cons))
+                and (map (\(x,y) -> x == y) (kassignments cons))
                 then True
                 else error $ "Something wrong with the assignments in the constructor of class "
                              ++ (cname c) ++ ". T-Class failed."
@@ -119,8 +119,8 @@ tcheckMethods ct c = methodsAreUnique && argsOK && mtypeOK && mexprsOK
         methods = cmethods c
 
         -- Run the method head and expression checkers on all methods in the class.
-        mtypeOK = all ((==) True) . map mheadOK $ methods
-        mexprsOK = all ((==) True) . map expressionOK $ methods
+        mtypeOK = and . map mheadOK $ methods
+        mexprsOK = and . map expressionOK $ methods
 
         -- Check that the methods have unique names.
         methodsAreUnique = if nub methodNames == methodNames
@@ -195,7 +195,7 @@ exprType ct m (ExprMethod e0expr e0name e0exprs) =
         (argTypes, retType) = methtype ct (getClass ct (exprType ct m e0expr)) e0name
         exprTypes = map (exprType ct m) e0exprs
         subTypesOK = length exprTypes == length argTypes &&
-                      all ((==) True) (zipWith (isSubClass ct) (map (getClass ct) exprTypes) (map (getClass ct) argTypes))
+                      and (zipWith (isSubClass ct) (map (getClass ct) exprTypes) (map (getClass ct) argTypes))
 
 -- (T-New)
 exprType ct m (ExprNew newType e0exprs) =
@@ -206,7 +206,7 @@ exprType ct m (ExprNew newType e0exprs) =
         classFieldTypes = map ftype $ fields ct $ getClass ct newType
         exprTypes = map (exprType ct m) e0exprs
         subTypesOK = length exprTypes == length classFieldTypes &&
-                      all ((==) True) (zipWith (isSubClass ct) (map (getClass ct) exprTypes) (map (getClass ct) classFieldTypes))
+                      and (zipWith (isSubClass ct) (map (getClass ct) exprTypes) (map (getClass ct) classFieldTypes))
 
 -- (T-*Cast)
 -- While all the casts should return castType as the type of the expression,
